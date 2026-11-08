@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Padel-Runde</title>
+<meta name="description" content="Wann kannst du? Trag dich ein – der Bot bucht den Termin mit den meisten Zusagen.">
+<meta property="og:title" content="Padel-Runde – wann kannst du?">
+<meta property="og:description" content="Kurz eintragen, der Bot bucht automatisch.">
+<meta name="theme-color" content="#0b1a14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  /* ==== NUR HIER ANPASSEN: Web-App-URL aus Google Apps Script (endet auf /exec).
+     Leer lassen = Demo-Modus mit Beispieldaten. ==== */
+  const API_URL = "https://script.google.com/macros/s/AKfycbwYed_ZUXjrERbGJ5EcFFhqGOnyjYpViPrDoM4XBvCWC8pMmJJPpgVd7SzE2NOpfJWe/exec";
+</script>
+<style>
+:root{
+  --bg:#0b1a14; --bg2:#10241b; --card:#132c21; --card2:#183527; --line:#244a38;
+  --text:#ecf5ef; --muted:#93b3a1; --lime:#d6ff3d; --lime-ink:#14200a; --coral:#ff7a59;
+  --radius:20px; --shadow:0 10px 30px -12px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 Inter,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:110px}
+.wrap{max-width:680px;margin:0 auto;padding:0 16px}
+h1,h2,h3,.disp,.day,.time,.count{font-family:"Bricolage Grotesque",Inter,system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;padding:44px 0 30px;
+  background:radial-gradient(120% 90% at 85% -10%,#1f4a35 0%,transparent 60%),var(--bg)}
+.court{position:absolute;right:-60px;top:-30px;width:300px;opacity:.22;transform:rotate(-14deg)}
+.ball{position:absolute;right:28px;top:34px;width:58px;height:58px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#f2ff9a,var(--lime) 55%,#a7cf1c);
+  box-shadow:0 12px 30px -6px rgba(214,255,61,.45);animation:bounce 2.6s ease-in-out infinite}
+.ball::before,.ball::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(255,255,255,.75);
+  clip-path:inset(0 55% 0 0)}
+.ball::after{clip-path:inset(0 0 0 55%)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media (prefers-reduced-motion:reduce){.ball{animation:none}}
+.kicker{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--lime);background:rgba(214,255,61,.1);border:1px solid rgba(214,255,61,.25);padding:5px 10px;border-radius:99px}
+.hero h1{font-size:clamp(40px,11vw,64px);font-weight:800;line-height:.95;margin:14px 0 12px}
+.hero h1 em{font-style:normal;color:var(--lime)}
+.hero p{color:var(--muted);max-width:430px;margin:0}
+.rules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.rule{font-size:13px;color:var(--text);background:var(--bg2);border:1px solid var(--line);padding:6px 11px;border-radius:99px}
+.rule b{color:var(--lime)}
+
+/* Name */
+.namebox{position:sticky;top:0;z-index:5;background:rgba(11,26,20,.86);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 0}
+.namebox label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px 4px}
+.namebox input{width:100%;font:600 18px Inter,sans-serif;color:var(--text);background:var(--card);
+  border:1.5px solid var(--line);border-radius:14px;padding:13px 15px;outline:none;transition:border-color .15s}
+.namebox input:focus{border-color:var(--lime)}
+.namebox input::placeholder{color:#5f806e;font-weight:500}
+
+/* Sections */
+section{margin-top:30px}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sechead h2{font-size:24px;font-weight:700}
+.sechead span{font-size:13px;color:var(--muted)}
+.week{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:20px 4px 10px}
+
+/* Cards */
+.card{position:relative;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;
+  background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 12px;
+  margin-bottom:10px;cursor:pointer;transition:transform .12s,border-color .15s,background .15s;box-shadow:var(--shadow);
+  -webkit-tap-highlight-color:transparent;user-select:none}
+.card:active{transform:scale(.985)}
+.card.on{border-color:var(--lime);background:linear-gradient(135deg,#1d3d10 0%,var(--card) 70%)}
+.card.lead::before{content:"Führt";position:absolute;top:-9px;left:14px;font:700 11px Inter;letter-spacing:.06em;
+  text-transform:uppercase;background:var(--lime);color:var(--lime-ink);padding:3px 8px;border-radius:99px}
+.date{text-align:center;background:var(--bg2);border-radius:14px;padding:8px 0}
+.date .dow{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.date .day{font-size:28px;font-weight:800;line-height:1}
+.date .mon{font-size:11px;color:var(--muted)}
+.mid{min-width:0}
+.time{font-size:20px;font-weight:700;line-height:1.1}
+.sub{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{position:relative;height:7px;background:var(--bg2);border-radius:99px;margin:9px 0 7px;overflow:visible}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--lime);border-radius:99px;transition:width .3s}
+.bar b{position:absolute;top:-3px;width:2px;height:13px;background:#4d7a63;border-radius:2px}
+.names{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.names .me{color:var(--lime);font-weight:600}
+.right{display:flex;flex-direction:column;align-items:center;gap:6px}
+.count{font-size:26px;font-weight:800;line-height:1}
+.courts{font-size:11px;color:var(--muted);white-space:nowrap}
+.check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;transition:.15s}
+.card.on .check{background:var(--lime);border-color:var(--lime)}
+.check svg{width:16px;height:16px;opacity:0;transition:.15s}
+.card.on .check svg{opacity:1}
+
+/* Upcoming / Absage */
+.card.up{cursor:default;grid-template-columns:64px 1fr auto}
+.card.up.out{border-color:var(--coral);background:linear-gradient(135deg,#3b1d16 0%,var(--card) 70%)}
+.btn-out{font:600 13px Inter;color:var(--text);background:transparent;border:1.5px solid var(--line);
+  border-radius:99px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.card.out .btn-out{border-color:var(--coral);color:var(--coral)}
+.tag{font-size:11px;color:var(--muted)}
+
+.empty{color:var(--muted);background:var(--bg2);border:1.5px dashed var(--line);border-radius:var(--radius);padding:18px;text-align:center}
+.demo{margin-top:16px;font-size:13px;color:var(--lime-ink);background:var(--lime);border-radius:12px;padding:9px 12px}
+.how{color:var(--muted);font-size:14px;margin-top:34px;border-top:1px solid var(--line);padding-top:18px}
+.how li{margin-bottom:6px}
+
+/* Save bar */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--bg) 60%,rgba(11,26,20,0));transform:translateY(120%);transition:transform .25s}
+.savebar.show{transform:none}
+.savebar button{display:block;width:100%;max-width:648px;margin:0 auto;font:700 17px Inter;color:var(--lime-ink);
+  background:var(--lime);border:0;border-radius:16px;padding:16px;cursor:pointer;box-shadow:0 12px 30px -8px rgba(214,255,61,.5)}
+.savebar button:disabled{opacity:.6}
+.toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-150%);z-index:20;background:var(--text);color:var(--bg);
+  font-weight:600;padding:11px 16px;border-radius:12px;transition:transform .25s;max-width:calc(100% - 32px)}
+.toast.show{transform:translate(-50%,0)}
+.skel{height:86px;border-radius:var(--radius);background:linear-gradient(90deg,var(--card) 0,var(--card2) 50%,var(--card) 100%);
+  background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:10px}
+@keyframes sh{to{background-position:-200% 0}}
+@media (max-width:380px){.card{grid-template-columns:54px 1fr auto;gap:10px}.date .day{font-size:24px}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="court" viewBox="0 0 200 300" fill="none" stroke="#d6ff3d" stroke-width="3" aria-hidden="true">
+    <rect x="10" y="10" width="180" height="280" rx="4"/><line x1="10" y1="150" x2="190" y2="150" stroke-width="5"/>
+    <line x1="10" y1="80" x2="190" y2="80"/><line x1="10" y1="220" x2="190" y2="220"/>
+    <line x1="100" y1="80" x2="100" y2="220"/>
+  </svg>
+  <div class="ball" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="kicker">Padel-Runde</span>
+    <h1>Wann kannst<br><em>du?</em></h1>
+    <p>Tipp alle Termine an, die dir passen. Der Bot bucht automatisch den Termin mit den meisten Zusagen.</p>
+    <div class="rules" id="rules"></div>
+    <div id="demo"></div>
+  </div>
+</header>
+
+<div class="namebox">
+  <div class="wrap">
+    <label for="name">Dein Name (immer gleich schreiben)</label>
+    <input id="name" autocomplete="given-name" placeholder="z. B. Philipp" maxlength="40">
+  </div>
+</div>
+
+<main class="wrap">
+  <section>
+    <div class="sechead"><h2>Abstimmung</h2><span>in 15–28 Tagen</span></div>
+    <div id="voting"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Schon in Buchung</h2><span>nächste 14 Tage</span></div>
+    <div id="upcoming"><div class="skel"></div></div>
+  </section>
+
+  <ol class="how">
+    <li>Namen eintragen, Termine antippen, <b>Speichern</b>. Deine neueste Auswahl zählt.</li>
+    <li>14 Tage vorher bucht der Bot pro Woche den Termin mit den meisten Zusagen.</li>
+    <li>Fällst du bei einem gebuchten Termin aus: unter „Schon in Buchung“ auf <b>Ich fall aus</b>.</li>
+  </ol>
+</main>
+
+<div class="savebar" id="savebar"><button id="save">Speichern</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const MON = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+let data = null, yes = new Set(), no = new Set(), baseYes = new Set(), dirty = false;
+
+const store = {
+  get(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+const norm = s => s.trim().toLowerCase().replace(/\s+/g," ");
+const me = () => norm($("#name").value);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const D = iso => new Date(iso + "T12:00:00");
+const fmt = iso => { const d = D(iso); return `${d.getDate()}. ${MON[d.getMonth()]}`; };
+function isoWeek(iso){
+  const d = D(iso); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const w1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7);
+}
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2600); }
+
+/* ---------- Demo-Daten ---------- */
+function demoData(){
+  const slots = [["Di","19:00",2],["Do","20:00",4]], dows = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+  const ppl = ["Philipp","Max","Lena","Jan","Ali","Sara","Ben","Kai","Tom"];
+  const mk = (from, to) => { const out = []; const t0 = new Date(); t0.setHours(12,0,0,0);
+    for (let i = from; i <= to; i++){ const d = new Date(t0.getTime() + i*864e5);
+      slots.forEach(([dow,time]) => { if (dows[d.getDay()] !== dow) return;
+        const iso = d.toISOString().slice(0,10), dd = String(d.getDate()).padStart(2,"0"), mm = String(d.getMonth()+1).padStart(2,"0");
+        const n = (i * 7 + time.length * 3) % 9; const b = new Date(d.getTime() - 14*864e5).toISOString().slice(0,10);
+        out.push({ id:`${dow} ${dd}.${mm}. ${time}`, label:`${dow} ${dd}.${mm}. ${time}`, date:iso, time, dur:"", names:ppl.slice(0,n), bookOn:b }); }); }
+    return out; };
+  return { voting: mk(15,28), upcoming: mk(0,14), rules:{minPlayers:4,twoCourtsFrom:8,daysAhead:14}, demo:true };
+}
+
+/* ---------- Laden / Speichern ---------- */
+async function load(){
+  try {
+    data = API_URL ? await (await fetch(API_URL, {cache:"no-store"})).json() : demoData();
+  } catch(e){
+    $("#voting").innerHTML = `<div class="empty">Daten konnten nicht geladen werden. Bitte später nochmal versuchen.</div>`;
+    $("#upcoming").innerHTML = ""; return;
+  }
+  if (data.demo) $("#demo").innerHTML = `<div class="demo">Demo-Modus – API_URL in index.html ist noch leer.</div>`;
+  const r = data.rules;
+  $("#rules").innerHTML = `<span class="rule">ab <b>${r.minPlayers}</b> Leuten 1 Platz</span>
+    <span class="rule">ab <b>${r.twoCourtsFrom}</b> Leuten 2 Plätze</span>
+    <span class="rule">Buchung <b>${r.daysAhead} Tage</b> vorher</span>`;
+  syncFromName(); render();
+}
+
+function syncFromName(){
+  const n = me(); yes = new Set(); no = new Set();
+  if (n && data) data.voting.forEach(t => { if (t.names.some(x => norm(x) === n)) yes.add(t.id); });
+  baseYes = new Set(yes); dirty = false; updateBar();
+}
+
+async function save(){
+  const name = $("#name").value.trim();
+  if (!name){ $("#name").focus(); toast("Bitte erst deinen Namen eintragen"); return; }
+  const btn = $("#save"); btn.disabled = true; btn.textContent = "Speichere …";
+  try {
+    if (API_URL){
+      const res = await (await fetch(API_URL, { method:"POST", body: JSON.stringify({ name, yes:[...yes], no:[...no] }) })).json();
+      if (!res.ok) throw new Error(res.error || "Fehler");
+    } else {
+      data.voting.forEach(t => { t.names = t.names.filter(x => norm(x) !== me()); if (yes.has(t.id)) t.names.push(name); });
+      data.upcoming.forEach(t => { if (no.has(t.id)) t.names = t.names.filter(x => norm(x) !== me()); });
+    }
+    store.set("padel-name", name);
+    toast("Gespeichert – danke!");
+    if (API_URL) await load(); else { syncFromName(); render(); }
+  } catch(e){ toast("Speichern fehlgeschlagen: " + e.message); }
+  btn.disabled = false; btn.textContent = "Speichern"; updateBar();
+}
+
+/* ---------- Darstellung ---------- */
+const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="#14200a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+
+function countFor(t){
+  const n = me(), others = t.names.filter(x => norm(x) !== n);
+  const mine = t.names.length !== others.length;
+  return { others, mine, total: others.length + (yes.has(t.id) ? 1 : 0) };
+}
+
+function card(t, opts){
+  const r = data.rules, d = D(t.date);
+  const { others, total } = opts.up ? { others: t.names.filter(x => norm(x) !== me()), total: t.names.length - (no.has(t.id) ? 1 : 0) } : countFor(t);
+  const showMe = opts.up ? (t.names.some(x => norm(x) === me()) && !no.has(t.id)) : yes.has(t.id);
+  const nm = [...(showMe ? [`<span class="me">Du</span>`] : []), ...others.map(esc)];
+  const pct = Math.min(100, total / Math.max(r.twoCourtsFrom, 1) * 100);
+  const courts = total >= r.twoCourtsFrom ? "2 Plätze" : total >= r.minPlayers ? "1 Platz" : `noch ${r.minPlayers - total}`;
+  const m1 = r.minPlayers / r.twoCourtsFrom * 100;
+  const right = opts.up
+    ? (t.names.some(x => norm(x) === me()) ? `<button class="btn-out" data-out="${esc(t.id)}">${no.has(t.id) ? "Doch dabei" : "Ich fall aus"}</button>` : `<span class="tag">${total} dabei</span>`)
+    : `<div class="count">${total}</div><div class="courts">${courts}</div><div class="check">${CHECK}</div>`;
+  const cls = ["card", opts.up ? "up" : "", !opts.up && yes.has(t.id) ? "on" : "", opts.up && no.has(t.id) ? "out" : "", opts.lead ? "lead" : ""].join(" ");
+  const sub = [t.dur ? esc(t.dur) : "", opts.up ? (total >= r.minPlayers ? courts : `${total} dabei`) : `Bot bucht am ${fmt(t.bookOn)}`].filter(Boolean).join(" · ");
+  return `<div class="${cls}" ${opts.up ? "" : `data-id="${esc(t.id)}" role="button" tabindex="0" aria-pressed="${yes.has(t.id)}"`}>
+    <div class="date"><div class="dow">${esc(t.label.slice(0,2))}</div><div class="day">${d.getDate()}</div><div class="mon">${MON[d.getMonth()]}</div></div>
+    <div class="mid"><div class="time">${esc(t.time)} Uhr</div><div class="sub">${sub}</div>
+      <div class="bar"><i style="width:${pct}%"></i><b style="left:${m1}%"></b></div>
+      <div class="names">${nm.length ? nm.join(", ") : "Noch niemand"}</div></div>
+    <div class="right">${right}</div></div>`;
+}
+
+function render(){
+  if (!data) return;
+  const weeks = {};
+  data.voting.forEach(t => (weeks[isoWeek(t.date)] = weeks[isoWeek(t.date)] || []).push(t));
+  let html = "";
+  Object.keys(weeks).forEach(w => {
+    const list = weeks[w];
+    const best = list.reduce((a, b) => (countFor(b).total > countFor(a).total ? b : a), list[0]);
+    const lead = countFor(best).total >= data.rules.minPlayers ? best.id : null;
+    html += `<div class="week">KW ${w} · ${fmt(list[0].date)} – ${fmt(list[list.length-1].date)}</div>`;
+    html += list.map(t => card(t, { lead: t.id === lead })).join("");
+  });
+  $("#voting").innerHTML = html || `<div class="empty">Gerade keine Termine zur Abstimmung.</div>`;
+  $("#upcoming").innerHTML = data.upcoming.length ? data.upcoming.map(t => card(t, { up:true })).join("") : `<div class="empty">Keine Termine in den nächsten 14 Tagen.</div>`;
+}
+
+function updateBar(){
+  const changed = no.size > 0 || yes.size !== baseYes.size || [...yes].some(x => !baseYes.has(x));
+  dirty = changed;
+  $("#savebar").classList.toggle("show", changed);
+}
+
+/* ---------- Events ---------- */
+$("#voting").addEventListener("click", e => {
+  const c = e.target.closest(".card[data-id]"); if (!c) return;
+  if (!me()){ $("#name").focus(); toast("Trag zuerst deinen Namen ein"); return; }
+  const id = c.dataset.id; yes.has(id) ? yes.delete(id) : yes.add(id);
+  if (navigator.vibrate) navigator.vibrate(8);
+  render(); updateBar();
+});
+$("#voting").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".card[data-id]")){ e.preventDefault(); e.target.click(); } });
+$("#upcoming").addEventListener("click", e => {
+  const b = e.target.closest("[data-out]"); if (!b) return;
+  const id = b.dataset.out; no.has(id) ? no.delete(id) : no.add(id); render(); updateBar();
+});
+let tmr; $("#name").addEventListener("input", () => { clearTimeout(tmr); tmr = setTimeout(() => { syncFromName(); render(); }, 250); });
+$("#save").addEventListener("click", save);
+window.addEventListener("beforeunload", e => { if (dirty){ e.preventDefault(); e.returnValue = ""; } });
+
+$("#name").value = store.get("padel-name");
+load();
+</script>
+</body>
+</html>
