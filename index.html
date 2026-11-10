@@ -8,6 +8,13 @@
 <meta property="og:title" content="Padel-Runde – wann kannst du?">
 <meta property="og:description" content="Kurz eintragen, der Bot bucht automatisch.">
 <meta name="theme-color" content="#0b1a14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Padel">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -122,6 +129,34 @@ section{margin-top:30px}
   background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:10px}
 @keyframes sh{to{background-position:-200% 0}}
 @media (max-width:380px){.card{grid-template-columns:54px 1fr auto;gap:10px}.date .day{font-size:24px}}
+/* Install-Karte + Willkommen */
+.install{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:15;max-width:656px;margin:0 auto;
+  background:var(--card2);border:1.5px solid var(--lime);border-radius:20px;padding:16px 16px 14px;box-shadow:0 18px 40px -10px rgba(0,0,0,.7);
+  display:none;animation:up .35s ease}
+.install.show{display:block}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.install .row{display:flex;gap:12px;align-items:center}
+.install img{width:52px;height:52px;border-radius:13px;flex:none}
+.install .row b{display:block;font-size:16px}
+.install small{color:var(--muted);font-size:13.5px;line-height:1.35;display:block}
+.install .btns{display:flex;gap:8px;margin-top:12px}
+.install button{flex:1;font:700 15px Inter;border-radius:12px;padding:12px;border:0;cursor:pointer}
+.install .go{background:var(--lime);color:var(--lime-ink)}
+.install .no{background:transparent;color:var(--muted);border:1.5px solid var(--line);flex:.55}
+.ios-steps{margin:10px 0 0;padding-left:20px;font-size:14px;color:var(--text)}
+.ios-steps li{margin:4px 0}
+.ios-steps svg{width:17px;height:17px;vertical-align:-3px;margin:0 2px}
+body.has-install .savebar{bottom:0}
+.welcome{position:fixed;inset:0;z-index:30;background:rgba(5,12,9,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;padding:16px}
+.welcome.show{display:flex}
+.welcome .box{width:100%;max-width:420px;background:var(--card);border:1.5px solid var(--line);border-radius:24px;padding:26px 20px 20px;text-align:center}
+.welcome img{width:72px;height:72px;border-radius:18px;margin-bottom:12px}
+.welcome h2{font-size:28px;font-weight:800;margin-bottom:6px}
+.welcome p{color:var(--muted);margin:0 0 16px}
+.welcome input{width:100%;font:600 18px Inter;color:var(--text);background:var(--bg2);border:1.5px solid var(--line);border-radius:14px;padding:14px;outline:none;text-align:center}
+.welcome input:focus{border-color:var(--lime)}
+.welcome button{width:100%;margin-top:12px;font:700 17px Inter;background:var(--lime);color:var(--lime-ink);border:0;border-radius:14px;padding:15px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -134,7 +169,7 @@ section{margin-top:30px}
   </svg>
   <div class="ball" aria-hidden="true"></div>
   <div class="wrap">
-    <span class="kicker">Padel-Runde</span>
+    <span class="kicker">Padel-Runde · maba! Mannheim</span>
     <h1>Wann kannst<br><em>du?</em></h1>
     <p>Tipp alle Termine an, die dir passen. Der Bot bucht automatisch den Termin mit den meisten Zusagen.</p>
     <div class="rules" id="rules"></div>
@@ -169,6 +204,29 @@ section{margin-top:30px}
 
 <div class="savebar" id="savebar"><button id="save">Speichern</button></div>
 <div class="toast" id="toast"></div>
+
+<div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-labelledby="wtitle">
+  <div class="box">
+    <img src="icon-192.png" alt="">
+    <h2 id="wtitle">Willkommen! 🎾</h2>
+    <p>Wie heißt du? Der Name wird gespeichert, du musst ihn nur einmal eingeben.</p>
+    <input id="wname" placeholder="Dein Vorname" maxlength="40" autocomplete="given-name">
+    <button id="wgo">Los geht's</button>
+  </div>
+</div>
+
+<div class="install" id="install">
+  <div class="row">
+    <img src="icon-192.png" alt="">
+    <div><b>Padel als App installieren</b><small id="itext">Eine Taste auf dem Startbildschirm – öffnet sich wie eine normale App.</small></div>
+  </div>
+  <ol class="ios-steps" id="iossteps" hidden>
+    <li>Unten auf <b>Teilen</b> tippen <svg viewBox="0 0 24 24" fill="none" stroke="#d6ff3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></li>
+    <li><b>„Zum Home-Bildschirm“</b> wählen (evtl. etwas nach unten scrollen)</li>
+    <li>Oben rechts <b>Hinzufügen</b> tippen</li>
+  </ol>
+  <div class="btns"><button class="no" id="ino">Später</button><button class="go" id="igo">Installieren</button></div>
+</div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -296,6 +354,7 @@ function updateBar(){
   const changed = no.size > 0 || yes.size !== baseYes.size || [...yes].some(x => !baseYes.has(x));
   dirty = changed;
   $("#savebar").classList.toggle("show", changed);
+  if (changed) document.getElementById("install").classList.remove("show");
 }
 
 /* ---------- Events ---------- */
@@ -317,6 +376,59 @@ window.addEventListener("beforeunload", e => { if (dirty){ e.preventDefault(); e
 
 $("#name").value = store.get("padel-name");
 load();
+
+/* ---------- Willkommen (erster Start) ---------- */
+if (!store.get("padel-name")){
+  $("#welcome").classList.add("show");
+  setTimeout(() => $("#wname").focus(), 300);
+}
+function finishWelcome(){
+  const n = $("#wname").value.trim();
+  if (!n){ $("#wname").focus(); return; }
+  store.set("padel-name", n); $("#name").value = n;
+  $("#welcome").classList.remove("show");
+  syncFromName(); render(); setTimeout(showInstall, 1200);
+}
+$("#wgo").addEventListener("click", finishWelcome);
+$("#wname").addEventListener("keydown", e => { if (e.key === "Enter") finishWelcome(); });
+
+/* ---------- App installieren ---------- */
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+const ua = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/.test(ua) || (isIOS && /CriOS|FxiOS|EdgiOS|GSA\//.test(ua));
+let deferred = null;
+
+function showInstall(fallback){
+  if (standalone || $("#welcome").classList.contains("show")) return;
+  const until = +store.get("padel-install-later") || 0;
+  if (Date.now() < until) return;
+  if (deferred){                                   // Android / Chrome: echter Installieren-Dialog
+    $("#iossteps").hidden = true; $("#igo").textContent = "Installieren";
+  } else if (isIOS && !inApp){                     // iPhone in Safari: Anleitung
+    $("#iossteps").hidden = false; $("#igo").textContent = "Verstanden";
+    $("#itext").textContent = "So legst du die App auf deinen Home-Bildschirm:";
+  } else if (inApp){                               // z. B. aus WhatsApp geöffnet
+    $("#iossteps").hidden = true; $("#igo").textContent = "Link kopieren";
+    $("#itext").textContent = isIOS ? "Öffne den Link in Safari, um die App zu installieren." : "Öffne den Link in Chrome, um die App zu installieren.";
+  } else if (/Android/.test(ua) && fallback){       // Android ohne automatischen Dialog
+    $("#iossteps").hidden = false; $("#igo").textContent = "Verstanden";
+    $("#itext").textContent = "So legst du die App auf deinen Startbildschirm:";
+    $("#iossteps").innerHTML = "<li>Oben rechts auf <b>⋮</b> (Menü) tippen</li><li><b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b> wählen</li><li>Mit <b>Installieren</b> bestätigen</li>";
+  } else return;
+  $("#install").classList.add("show");
+}
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; setTimeout(showInstall, 800); });
+window.addEventListener("appinstalled", () => { $("#install").classList.remove("show"); toast("App installiert 🎉"); });
+$("#igo").addEventListener("click", async () => {
+  if (deferred){ deferred.prompt(); await deferred.userChoice; deferred = null; $("#install").classList.remove("show"); }
+  else if (inApp){ try { await navigator.clipboard.writeText(location.href); toast("Link kopiert – jetzt im Browser einfügen"); } catch(e){ toast(location.href); } }
+  else { $("#install").classList.remove("show"); store.set("padel-install-later", Date.now() + 3*864e5); }
+});
+$("#ino").addEventListener("click", () => { $("#install").classList.remove("show"); store.set("padel-install-later", Date.now() + 7*864e5); });
+setTimeout(showInstall, 2500);
+setTimeout(() => { if (!deferred) showInstall(true); }, 7000);
 </script>
 </body>
 </html>
