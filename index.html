@@ -134,6 +134,14 @@ section{margin-top:30px}
   background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:10px}
 @keyframes sh{to{background-position:-200% 0}}
 @media (max-width:380px){.card{grid-template-columns:54px 1fr auto;gap:10px}.date .day{font-size:24px}}
+/* Buchungsstatus */
+.stat{display:inline-block;font-size:12.5px;font-weight:700;border-radius:99px;padding:3px 9px;margin:4px 0 1px;max-width:100%;
+  white-space:normal;line-height:1.3}
+.stat.ok{background:rgba(214,255,61,.16);color:var(--lime);border:1px solid rgba(214,255,61,.4)}
+.stat.no{background:rgba(255,122,89,.14);color:var(--coral);border:1px solid rgba(255,122,89,.45)}
+.card.booked::before{content:"Termin steht";position:absolute;top:-9px;left:14px;font:700 11px Inter;letter-spacing:.06em;
+  text-transform:uppercase;background:var(--lime);color:var(--lime-ink);padding:3px 8px;border-radius:99px}
+.card.failed{border-color:rgba(255,122,89,.55)}
 /* Install-Knopf im Kopf */
 .installbtn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font:700 15px Inter;color:var(--lime-ink);
   background:var(--lime);border:0;border-radius:99px;padding:11px 18px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(214,255,61,.6)}
@@ -273,7 +281,8 @@ function demoData(){
         const n = (i * 7 + time.length * 3) % 9; const b = new Date(d.getTime() - 14*864e5).toISOString().slice(0,10);
         out.push({ id:`${dow} ${dd}.${mm}. ${time}`, label:`${dow} ${dd}.${mm}. ${time}`, date:iso, time, dur:"", names:ppl.slice(0,n), bookOn:b }); }); }
     return out; };
-  return { voting: mk(15,28), upcoming: mk(0,14), rules:{minPlayers:4,twoCourtsFrom:8,daysAhead:14}, demo:true };
+  const up = mk(0,14); if (up[1]) up[1].status = {state:"booked", courts:"Padel 3 Indoor"}; if (up[2]) up[2].status = {state:"failed", info:"ausgebucht"};
+  return { voting: mk(15,28), upcoming: up, rules:{minPlayers:4,twoCourtsFrom:8,daysAhead:14}, demo:true };
 }
 
 /* ---------- Laden / Speichern ---------- */
@@ -337,11 +346,16 @@ function card(t, opts){
   const right = opts.up
     ? (t.names.some(x => norm(x) === me()) ? `<button class="btn-out" data-out="${esc(t.id)}">${no.has(t.id) ? "Doch dabei" : "Ich fall aus"}</button>` : `<span class="tag">${total} dabei</span>`)
     : `<div class="count">${total}</div><div class="courts">${courts}</div><div class="check">${CHECK}</div>`;
-  const cls = ["card", opts.up ? "up" : "", !opts.up && yes.has(t.id) ? "on" : "", opts.up && no.has(t.id) ? "out" : "", opts.lead ? "lead" : ""].join(" ");
+  const stt = t.status && t.status.state;
+  const cls = ["card", opts.up ? "up" : "", !opts.up && yes.has(t.id) ? "on" : "", opts.up && no.has(t.id) ? "out" : "",
+    opts.lead && !stt ? "lead" : "", stt === "booked" ? "booked" : "", stt === "failed" ? "failed" : ""].join(" ");
+  const statHtml = stt === "booked"
+    ? `<div class="stat ok">✅ Gebucht${t.status.courts ? " · " + esc(t.status.courts) : ""}</div>`
+    : stt === "failed" ? `<div class="stat no">❌ Nicht gebucht${t.status.info ? " · " + esc(t.status.info) : ""}</div>` : "";
   const sub = [t.dur ? esc(t.dur) : "", opts.up ? (total >= r.minPlayers ? courts : `${total} dabei`) : `Bot bucht am ${fmt(t.bookOn)}`].filter(Boolean).join(" · ");
   return `<div class="${cls}" ${opts.up ? "" : `data-id="${esc(t.id)}" role="button" tabindex="0" aria-pressed="${yes.has(t.id)}"`}>
     <div class="date"><div class="dow">${esc(t.label.slice(0,2))}</div><div class="day">${d.getDate()}</div><div class="mon">${MON[d.getMonth()]}</div></div>
-    <div class="mid"><div class="time">${esc(t.time)} Uhr</div><div class="sub">${sub}</div>
+    <div class="mid"><div class="time">${esc(t.time)} Uhr</div>${statHtml}<div class="sub">${sub}</div>
       <div class="bar"><i style="width:${pct}%"></i><b style="left:${m1}%"></b></div>
       <div class="names">${nm.length ? nm.join(", ") : "Noch niemand"}</div></div>
     <div class="right">${right}</div></div>`;
